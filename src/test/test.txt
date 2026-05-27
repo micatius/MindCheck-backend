@@ -1,0 +1,86 @@
+Implementiraš **POST samo u `@RestController`** tako da dodaš create metodu kroz controller → service → repository (Thymeleaf ne diraš).
+
+- [ ] Dodaj `save(...)` u `MoodEntryRepository`
+- [ ] Dodaj `create(...)` u `MoodEntryService`
+- [ ] Implementiraj `create(...)` u `MoodEntryServiceImpl`
+- [ ] Implementiraj `save(...)` u `MockMoodEntryRepository` (auto-ID)
+- [ ] Dodaj `@PostMapping` u `MoodEntryController`
+
+`MoodEntryDTO` koji si poslao trenutno nije idealan za create (nema `notes`, a ima `activitiesCount` koji model nema), pa je najminimalnije da POST prima `MoodEntry`.
+
+### 1) `MoodEntryRepository`
+U `src/main/java/hr/tvz/mindcheck/mindcheckapp/repository/MoodEntryRepository.java` dodaj:
+```java
+MoodEntry save(MoodEntry moodEntry);
+```
+
+### 2) `MoodEntryService`
+U `src/main/java/hr/tvz/mindcheck/mindcheckapp/service/MoodEntryService.java` dodaj:
+```java
+MoodEntry create(MoodEntry moodEntry);
+```
+
+### 3) `MoodEntryServiceImpl`
+U `src/main/java/hr/tvz/mindcheck/mindcheckapp/service/MoodEntryServiceImpl.java`:
+```java
+@Override
+public MoodEntry create(MoodEntry moodEntry) {
+    return repo.save(moodEntry);
+}
+```
+
+### 4) `MockMoodEntryRepository`
+U `src/main/java/hr/tvz/mindcheck/mindcheckapp/repository/MockMoodEntryRepository.java` dodaj:
+```java
+@Override
+public MoodEntry save(MoodEntry moodEntry) {
+    long nextId = moodEntries.stream()
+            .mapToLong(MoodEntry::getId)
+            .max()
+            .orElse(0L) + 1;
+
+    MoodEntry saved = new MoodEntry(
+            nextId,
+            moodEntry.getMood(),
+            moodEntry.getEnergyLevel(),
+            moodEntry.getStressLevel(),
+            moodEntry.getNotes(),
+            moodEntry.getLoggedAt() != null ? moodEntry.getLoggedAt() : LocalDateTime.now()
+    );
+
+    moodEntries.add(saved);
+    return saved;
+}
+```
+
+### 5) `MoodEntryController` (`@RestController` POST)
+U `src/main/java/hr/tvz/mindcheck/mindcheckapp/controller/MoodEntryController.java` dodaj importe:
+```java
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+```
+
+i metodu:
+```java
+@PostMapping
+public ResponseEntity<MoodEntry> createMoodEntry(@Valid @RequestBody MoodEntry moodEntry) {
+    MoodEntry created = moodEntryService.create(moodEntry);
+    return ResponseEntity.status(201).body(created);
+}
+```
+
+To je to: endpoint će biti `POST /api/moodEntries` i radi isključivo kao REST.
+
+JSON za test:
+```json
+{
+  "mood": "GOOD",
+  "energyLevel": 7,
+  "stressLevel": 3,
+  "notes": "Nice day",
+  "loggedAt": "2026-03-23T14:30:00"
+}
+```
+
+Ako želiš, mogu ti odmah dati i “DTO varijantu” (`CreateMoodEntryDTO`) da API ne prima direktno domain model.

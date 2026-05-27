@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>New Mood Entry</title>
+</head>
+<body>
+<h1>Create Mood Entry</h1>
+
+<form th:action="@{/mood-entries}" th:object="${form}" method="post">
+    <div>
+        <label>Mood:</label>
+        <select th:field="*{mood}">
+            <option value="" disabled selected>Choose mood</option>
+            <option th:each="m : ${moods}" th:value="${m}" th:text="${m}"></option>
+        </select>
+    </div>
+
+    <div>
+        <label>Energy (1-10):</label>
+        <input type="number" th:field="*{energyLevel}" min="1" max="10"/>
+    </div>
+
+    <div>
+        <label>Stress (1-10):</label>
+        <input type="number" th:field="*{stressLevel}" min="1" max="10"/>
+    </div>
+
+    <div>
+        <label>Notes:</label>
+        <textarea th:field="*{notes}"></textarea>
+    </div>
+
+    <button type="submit">Save</button>
+</form>
+
+<div th:if="${#fields.hasErrors('*')}">
+    <p>Please fix validation errors.</p>
+</div>
+</body>
+</html>
